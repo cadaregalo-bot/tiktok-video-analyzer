@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爆款短视频拆解工具</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0b0f;
+      --bg-secondary: #12141c;
+      --bg-card: #181a24;
+      --bg-card-hover: #1e2130;
+      --border: #2a2d3e;
+      --text-primary: #e8e9ed;
+      --text-secondary: #8b8fa3;
+      --text-muted: #5a5e73;
+      --accent: #6c5ce7;
+      --accent-glow: rgba(108, 92, 231, 0.3);
+      --success: #00b894;
+      --warning: #fdcb6e;
+      --danger: #e17055;
+      --info: #74b9ff;
+      --orange: #e17055;
+      --pink: #fd79a8;
+      --cyan: #81ecec;
+      --tag-pain: #e17055;
+      --tag-product: #00b894;
+      --tag-scene: #74b9ff;
+      --tag-detail: #fdcb6e;
+      --tag-compare: #a29bfe;
+      --tag-cta: #fd79a8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .header .subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    /* Upload Area */
+    .upload-container {
+      max-width: 800px;
+      margin: 80px auto;
+      padding: 0 20px;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: var(--bg-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-area:hover {
+      border-color: var(--accent);
+      background: var(--bg-card-hover);
+      box-shadow: 0 0 40px var(--accent-glow);
+    }
+
+    .upload-area.dragging {
+      border-color: var(--accent);
+      background: rgba(108, 92, 231, 0.08);
+      box-shadow: 0 0 60px var(--accent-glow);
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+
+    .upload-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .upload-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .upload-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 24px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upload-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+
+    #fileInput { display: none; }
+
+    /* Features Grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 800px;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .feature-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .feature-card:nth-child(1) .feature-icon { background: rgba(108,92,231,0.15); }
+    .feature-card:nth-child(2) .feature-icon { background: rgba(0,184,148,0.15); }
+    .feature-card:nth-child(3) .feature-icon { background: rgba(253,203,110,0.15); }
+    .feature-card:nth-child(4) .feature-icon { background: rgba(116,185,255,0.15); }
+
+    .feature-title { font-size: 14px; font-weight: 500; }
+    .feature-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Progress */
+    .progress-container {
+      max-width: 800px;
+      margin: 80px auto;
+      padding: 0 20px;
+      display: none;
+    }
+
+    .progress-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+    }
+
+    .progress-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .progress-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      opacity: 0.4;
+      transition: all 0.3s;
+    }
+
+    .progress-step.active {
+      opacity: 1;
+      background: rgba(108,92,231,0.1);
+      border: 1px solid rgba(108,92,231,0.3);
+    }
+
+    .progress-step.done {
+      opacity: 0.7;
+    }
+
+    .step-indicator {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .progress-step.active .step-indicator {
+      background: var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    .progress-step.done .step-indicator { background: var(--success); }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+      50% { box-shadow: 0 0 0 8px transparent; }
+    }
+
+    /* Results */
+    .results-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: none;
+    }
+
+    /* Top Bar */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .results-header h2 { font-size: 16px; font-weight: 600; }
+
+    .btn-back {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Optimization Tip */
+    .optimization-tip {
+      background: rgba(253,203,110,0.08);
+      border: 1px solid rgba(253,203,110,0.2);
+      border-radius: 10px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-card:nth-child(1) .stat-value { color: var(--orange); }
+    .stat-card:nth-child(2) .stat-value { color: var(--success); }
+    .stat-card:nth-child(3) .stat-value { color: var(--info); }
+    .stat-card:nth-child(4) .stat-value { color: var(--warning); }
+    .stat-card:nth-child(5) .stat-value { color: var(--accent); }
+
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .stat-hint { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab:hover { color: var(--text-primary); }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Shot Timeline */
+    .timeline-bar {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      overflow: hidden;
+      height: 32px;
+    }
+
+    .timeline-segment {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 4px;
+    }
+
+    .timeline-segment:hover { opacity: 0.8; }
+
+    /* Shot Type Colors */
+    .type-痛点放大 { background: var(--tag-pain); }
+    .type-产品展示 { background: var(--tag-product); }
+    .type-使用场景 { background: var(--tag-scene); }
+    .type-细节特写 { background: var(--tag-detail); }
+    .type-效果对比 { background: var(--tag-compare); }
+    .type-行动引导 { background: var(--tag-cta); }
+    .type-开箱展示 { background: #00cec9; }
+    .type-社交证明 { background: #a29bfe; }
+    .type-情绪渲染 { background: #fab1a0; }
+
+    /* Shot Grid */
+    .shots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .shot-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .shot-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .shot-thumb {
+      width: 100%;
+      aspect-ratio: 9/16;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--text-muted);
+      position: relative;
+    }
+
+    .shot-number {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .shot-time {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .shot-info { padding: 10px; }
+
+    .shot-type-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: white;
+    }
+
+    /* Script Structure */
+    .structure-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .structure-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .formula-display {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      padding: 20px;
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+
+    .formula-display .arrow { color: var(--accent); margin: 0 4px; }
+
+    .structure-element {
+      padding: 16px;
+      border-left: 3px solid var(--accent);
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 10px;
+    }
+
+    .element-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .element-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .element-desc {
+      font-size: 13px;
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+
+    /* Materials Extracted */
+    .material-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+
+    .material-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .material-type {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .material-item {
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .material-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    /* Button styles */
+    .btn-primary {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover { box-shadow: 0 4px 20px var(--accent-glow); }
+
+    .btn-success {
+      padding: 10px 20px;
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* Shot type stats */
+    .type-stats {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .type-stat {
+      text-align: center;
+    }
+
+    .type-stat-count {
+      font-size: 22px;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .type-stat-label {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: white;
+      font-weight: 500;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .features { grid-template-columns: 1fr; }
+      .shots-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--text-muted);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">🎬</div>
+    <div>
+      <h1>爆款短视频拆解工具</h1>
+      <span class="subtitle">AI驱动的视频结构分析</span>
+    </div>
+  </div>
+
+  <!-- Upload Page -->
+  <div id="uploadPage">
+    <div class="upload-container">
+      <div class="upload-area" id="dropZone">
+        <div class="upload-icon">☁️</div>
+        <div class="upload-title">拖拽视频到这里，或点击上传</div>
+        <div class="upload-desc">支持 MP4, MOV, AVI, WebM 格式，最大 100MB</div>
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">选择文件上传</button>
+        <input type="file" id="fileInput" accept="video/mp4,video/quicktime,video/x-msvideo,video/webm">
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <div>
+          <div class="feature-title">智能镜头拆解</div>
+          <div class="feature-desc">Gemini AI 逐帧分析，识别场景切换</div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div>
+          <div class="feature-title">脚本结构分析</div>
+          <div class="feature-desc">自动匹配"停病药信买"框架</div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <div>
+          <div class="feature-title">素材自动提取</div>
+          <div class="feature-desc">钩子话术、痛点、卖点一键入库</div>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <div>
+          <div class="feature-title">飞书素材库入库</div>
+          <div class="feature-desc">拆解结果自动写入多维表格</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Page -->
+  <div class="progress-container" id="progressPage">
+    <div class="progress-card">
+      <div class="progress-title">🎬 正在拆解视频...</div>
+      <div class="progress-steps" id="progressSteps">
+        <div class="progress-step" data-step="1">
+          <div class="step-indicator">1</div>
+          <div>📁 上传视频文件</div>
+        </div>
+        <div class="progress-step" data-step="2">
+          <div class="step-indicator">2</div>
+          <div>🎬 发送给 Gemini AI</div>
+        </div>
+        <div class="progress-step" data-step="3">
+          <div class="step-indicator">3</div>
+          <div>🔍 逐帧分析中...</div>
+        </div>
+        <div class="progress-step" data-step="4">
+          <div class="step-indicator">4</div>
+          <div>📊 解析分析结果</div>
+        </div>
+        <div class="progress-step" data-step="5">
+          <div class="step-indicator">5</div>
+          <div>✅ 拆解完成</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Page -->
+  <div class="results-container" id="resultsPage">
+    <!-- filled by JS -->
+  </div>
+
+  <script>
+    // ============ State ============
+    let currentAnalysis = null;
+
+    // ============ Upload Handling ============
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragging');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragging');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file) handleUpload(file);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleUpload(file);
+    });
+
+    // ============ Upload & Analyze ============
+    async function handleUpload(file) {
+      // Show progress
+      document.getElementById('uploadPage').style.display = 'none';
+      document.getElementById('progressPage').style.display = 'block';
+
+      const formData = new FormData();
+      formData.append('video', file);
+
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const text = decoder.decode(value);
+          const lines = text.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                updateProgress(data.step, data.message);
+
+                if (data.step === 5 && data.data) {
+                  currentAnalysis = data.data.analysis;
+                  setTimeout(() => showResults(data.data), 800);
+                }
+
+                if (data.step === -1) {
+                  alert(data.message);
+                  resetToUpload();
+                }
+              } catch (e) { }
+            }
+          }
+        }
+      } catch (error) {
+        alert('分析失败: ' + error.message);
+        resetToUpload();
+      }
+    }
+
+    function updateProgress(step, message) {
+      const steps = document.querySelectorAll('.progress-step');
+      steps.forEach(s => {
+        const sStep = parseInt(s.dataset.step);
+        if (sStep < step) {
+          s.classList.add('done');
+          s.classList.remove('active');
+          s.querySelector('.step-indicator').textContent = '✓';
+        } else if (sStep === step) {
+          s.classList.add('active');
+          s.classList.remove('done');
+        }
+      });
+    }
+
+    function resetToUpload() {
+      document.getElementById('uploadPage').style.display = 'block';
+      document.getElementById('progressPage').style.display = 'none';
+      document.getElementById('resultsPage').style.display = 'none';
+      document.querySelectorAll('.progress-step').forEach(s => {
+        s.classList.remove('active', 'done');
+        s.querySelector('.step-indicator').textContent = s.dataset.step;
+      });
+    }
+
+    // ============ Show Results ============
+    function showResults(data) {
+      document.getElementById('progressPage').style.display = 'none';
+      document.getElementById('resultsPage').style.display = 'block';
+
+      const a = data.analysis;
+      if (!a || a.parse_error) {
+        document.getElementById('resultsPage').innerHTML = `
+          <div class="results-header">
+            <h2>拆解结果</h2>
+            <button class="btn-back" onclick="resetToUpload()">← 重新分析</button>
+          </div>
+          <div class="structure-section">
+            <p>AI 返回了结果但格式解析失败，原始内容如下：</p>
+            <pre style="white-space:pre-wrap;font-size:12px;margin-top:12px;color:var(--text-secondary)">${a?.raw_response || '无内容'}</pre>
+          </div>`;
+        return;
+      }
+
+      const ov = a.video_overview || {};
+      const shots = a.shots || [];
+      const structure = a.script_structure || {};
+      const materials = a.extracted_materials || {};
+
+      // Count shot types
+      const typeCounts = {};
+      shots.forEach(s => {
+        typeCounts[s.shot_type] = (typeCounts[s.shot_type] || 0) + 1;
+      });
+
+      document.getElementById('resultsPage').innerHTML = `
+        <div class="results-header">
+          <h2>📊 分析报告</h2>
+          <div>
+            <button class="btn-primary" onclick="saveToFeishu()" style="margin-right:8px">📥 入库到飞书</button>
+            <button class="btn-back" onclick="resetToUpload()">← 重新分析</button>
+          </div>
+        </div>
+
+        ${a.optimization_suggestions ? `
+        <div class="optimization-tip">
+          💡 优化建议：${a.optimization_suggestions}
+        </div>` : ''}
+
+        <!-- Stats -->
+        <div class="stats-bar">
+          <div class="stat-card">
+            <div class="stat-value">${ov.product_first_appear_seconds || '-'}秒</div>
+            <div class="stat-label">产品首次出现</div>
+            <div class="stat-hint">黄金3秒内出现最佳</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${ov.product_exposure_seconds || '-'}秒</div>
+            <div class="stat-label">产品露出时长</div>
+            <div class="stat-hint">建议占比30%以上</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${ov.product_exposure_ratio || '-'}%</div>
+            <div class="stat-label">产品露出占比</div>
+            <div class="stat-hint">高转化视频40%+</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${ov.total_duration_seconds || '-'}秒</div>
+            <div class="stat-label">视频总时长</div>
+            <div class="stat-hint">短视频15-60秒最佳</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${ov.total_shots || shots.length}个</div>
+            <div class="stat-label">镜头数量</div>
+            <div class="stat-hint">平均2-3秒/镜头</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tab active" data-tab="shots" onclick="switchTab('shots')">📷 镜头截图</div>
+          <div class="tab" data-tab="script" onclick="switchTab('script')">📝 脚本结构分析</div>
+          <div class="tab" data-tab="materials" onclick="switchTab('materials')">📦 提取素材</div>
+        </div>
+
+        <!-- Tab: Shots -->
+        <div class="tab-content active" id="tab-shots">
+          <div class="timeline-bar">
+            ${shots.map(s => {
+              const duration = parseFloat(s.time_end) - parseFloat(s.time_start);
+              const totalDur = ov.total_duration_seconds || 30;
+              const widthPct = Math.max((duration / totalDur) * 100, 3);
+              return `<div class="timeline-segment type-${s.shot_type}" style="width:${widthPct}%" title="#${s.shot_number} ${s.shot_type} ${s.time_start}-${s.time_end}s">${s.shot_type} ${s.time_start}-${s.time_end}s</div>`;
+            }).join('')}
+          </div>
+
+          <div class="type-stats">
+            ${Object.entries(typeCounts).map(([type, count]) => `
+              <div class="type-stat">
+                <div class="type-stat-count">${count}</div>
+                <div class="type-stat-label type-${type}">${type}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="shots-grid">
+            ${shots.map(s => `
+              <div class="shot-card" onclick="showShotDetail(${s.shot_number - 1})">
+                <div class="shot-thumb">
+                  <span class="shot-number">#${s.shot_number}</span>
+                  <span>🎞️</span>
+                  <span class="shot-time">${parseFloat(s.time_start).toFixed(1)}s</span>
+                </div>
+                <div class="shot-info">
+                  <div class="shot-type-tag type-${s.shot_type}">${s.shot_type}</div>
+                  <p style="font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${s.scene_description || ''}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Tab: Script Structure -->
+        <div class="tab-content" id="tab-script">
+          <div class="structure-section">
+            <div class="structure-title">📐 匹配框架：${structure.framework || '未识别'}</div>
+            <div class="formula-display">
+              ${(structure.formula || '停→病→药→信→买').split('→').map(item =>
+                `<span>${item.trim()}</span>`
+              ).join('<span class="arrow"> → </span>')}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:20px">
+              开头钩子类型：<strong style="color:var(--accent)">${structure.hook_type || '未识别'}</strong>
+            </div>
+          </div>
+
+          ${(structure.structure_breakdown || []).map(item => `
+            <div class="structure-element" style="border-left-color:${getElementColor(item.element)}">
+              <div class="element-label" style="color:${getElementColor(item.element)}">${item.element}</div>
+              <div class="element-time">${item.time_range || ''}</div>
+              <div class="element-desc">${item.description || ''}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Tab: Materials -->
+        <div class="tab-content" id="tab-materials">
+          ${materials.hook_scripts?.length ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">🎣 钩子话术 / CTA</div>
+            </div>
+            ${materials.hook_scripts.map(h => `
+              <div class="material-item">
+                <div class="material-label">${h.type || ''} · ${h.action_type || ''}</div>
+                <div>${h.text || ''}</div>
+              </div>
+            `).join('')}
+          </div>` : ''}
+
+          ${materials.pain_points?.length ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">😣 痛点场景</div>
+            </div>
+            ${materials.pain_points.map(p => `
+              <div class="material-item">
+                <div class="material-label">场景：${p.scene || ''}</div>
+                <div><strong>痛点：</strong>${p.user_pain || ''}</div>
+                <div style="margin-top:4px"><strong>情绪：</strong>${(p.emotion_keywords || []).join('、')}</div>
+                <div style="margin-top:4px"><strong>产品切入：</strong>${p.product_solution || ''}</div>
+              </div>
+            `).join('')}
+          </div>` : ''}
+
+          ${materials.selling_points?.length ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">💊 卖点画面</div>
+            </div>
+            ${materials.selling_points.map(s => `
+              <div class="material-item">
+                <div class="material-label">${s.visual_type || ''}</div>
+                <div>${s.description || ''}</div>
+                ${s.shooting_notes ? `<div style="margin-top:4px;color:var(--text-muted);font-size:12px">📸 ${s.shooting_notes}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>` : ''}
+
+          ${materials.social_proof?.length ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">🏆 社会证明</div>
+            </div>
+            ${materials.social_proof.map(s => `
+              <div class="material-item">
+                <div class="material-label">${s.type || ''}</div>
+                <div>${s.content || ''}</div>
+              </div>
+            `).join('')}
+          </div>` : ''}
+
+          ${materials.cta_scripts?.length ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">🛒 促单话术</div>
+            </div>
+            ${materials.cta_scripts.map(c => `
+              <div class="material-item">
+                <div class="material-label">${c.type || ''}</div>
+                <div>${c.text || ''}</div>
+                ${c.incentive ? `<div style="margin-top:4px;color:var(--warning)">🎁 ${c.incentive}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>` : ''}
+
+          ${materials.bgm ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">🎵 BGM 分析</div>
+            </div>
+            <div class="material-item">
+              <div class="material-label">${materials.bgm.mood || ''}</div>
+              <div>${materials.bgm.description || ''}</div>
+            </div>
+          </div>` : ''}
+
+          ${a.reusable_points ? `
+          <div class="material-card">
+            <div class="material-header">
+              <div class="material-type">✨ 可复用亮点</div>
+            </div>
+            <div class="material-item">${a.reusable_points}</div>
+          </div>` : ''}
+        </div>
+      `;
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+
+    function getElementColor(element) {
+      const colors = {
+        '停': '#e17055', '病': '#fdcb6e', '药': '#00b894',
+        '信': '#74b9ff', '买': '#fd79a8', '反转': '#a29bfe'
+      };
+      return colors[element] || 'var(--accent)';
+    }
+
+    function showShotDetail(index) {
+      const shot = currentAnalysis?.shots?.[index];
+      if (!shot) return;
+      alert(`镜头 #${shot.shot_number}\n时间: ${shot.time_start}s - ${shot.time_end}s\n类型: ${shot.shot_type}\n\n画面: ${shot.scene_description}\n\n文字: ${shot.text_overlay || '无'}\n口播: ${shot.voiceover || '无'}`);
+    }
+
+    // ============ Save to Feishu ============
+    async function saveToFeishu() {
+      alert('🚧 飞书入库功能将在 Phase 2 实现！\n\n拆解结果将自动写入：\n- 竞品爆款拆解库（整体记录）\n- 号召行动库 CTA（钩子话术）\n- 痛点需求场景库（痛点）\n- 卖点画面库（卖点）\n- 社会证明库（信任素材）');
+    }
+  </script>
+</body>
+</html>
