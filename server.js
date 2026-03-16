@@ -78,7 +78,7 @@ app.post('/api/analyze', upload.single('video'), async (req, res) => {
     // Step 2: Gemini 逐帧分析
     sendProgress(3, '🔍 Gemini AI 正在逐帧分析视频...');
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const analysisPrompt = `你是一个专业的TikTok带货短视频拆解分析师。请对这个视频进行逐帧拆解分析。
 
