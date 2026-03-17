@@ -13,6 +13,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
 const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
+const KIE_API_KEY = process.env.KIE_API_KEY;
+const FAL_API_KEY = process.env.FAL_API_KEY;
 
 const FEISHU_CONFIG = {
   app_token: 'T7g4b0M4waf9OwsMc3pcJoqfnma',
@@ -219,10 +221,170 @@ app.post('/api/save-to-feishu', async (req, res) => {
   } catch (error) { console.error('飞书入库失败:', error); res.status(500).json({ error: '飞书入库失败: ' + error.message }); }
 });
 
+// === API: Feishu List Records (for BGM library) ===
+async function feishuList(tableId, opts = {}) {
+  const token = await getFeishuToken();
+  const params = new URLSearchParams();
+  if (opts.page_size) params.set('page_size', opts.page_size);
+  if (opts.page_token) params.set('page_token', opts.page_token);
+  const url = `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableId}/records?${params}`;
+  const r = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+  const d = await r.json();
+  if (d.code !== 0) throw new Error('飞书读取失败: ' + (d.msg || d.code));
+  return d.data;
+}
+
+app.get('/api/feishu/bgm', async (req, res) => {
+  try {
+    if (!FEISHU_APP_ID || !FEISHU_APP_SECRET) return res.status(500).json({ error: '飞书未配置' });
+    const data = await feishuList(FEISHU_CONFIG.tables.bgm, { page_size: 100 });
+    const items = (data.items || []).map(r => ({
+      name: r.fields['BGM名称'] || '',
+      mood: r.fields['情绪类型'] || '',
+      content: r.fields['适用内容'] || '',
+      description: r.fields['特征描述'] || ''
+    })).filter(i => i.name);
+    res.json({ success: true, bgm: items });
+  } catch (e) { console.error('BGM读取失败:', e); res.status(500).json({ error: e.message }); }
+});
+
+// === API: Video Generation Platforms ===
+app.get('/api/videogen/platforms', (req, res) => {
+  res.json({
+    platforms: [
+      { id: 'kie', name: 'Kie.ai', available: !!KIE_API_KEY, models: [
+        { id: 'veo3_fast', name: 'Veo 3.1 Fast', price: '~$0.30/8s', speed: '快', quality: '标准' },
+        { id: 'veo3', name: 'Veo 3.1 Quality', price: '~$2.00/8s', speed: '慢', quality: '高' }
+      ]},
+      { id: 'fal', name: 'fal.ai', available: !!FAL_API_KEY, models: [
+        { id: 'fal-ai/veo3/fast', name: 'Veo 3 Fast', price: '~$0.10-0.15/s', speed: '快', quality: '标准' },
+        { id: 'fal-ai/veo3', name: 'Veo 3 Quality', price: '~$0.20-0.40/s', speed: '慢', quality: '高' }
+      ]}
+    ]
+  });
+});
+
+// In-memory task store for video gen polling
+const videoTasks = new Map();
+
+// === Kie.ai Video Generation ===
+async function kieGenerate(prompt, model, aspectRatio) {
+  const r = await fetch('https://api.kie.ai/api/v1/veo/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
+    body: JSON.stringify({
+      prompt,
+      model: model || 'veo3_fast',
+      aspect_ratio: aspectRatio || '9:16',
+      watermark: '',
+      enableTranslation: true
+    })
+  });
+  const d = await r.json();
+  if (d.code !== 200 && d.code !== 0) throw new Error('Kie.ai 提交失败: ' + (d.msg || JSON.stringify(d)));
+  return { taskId: d.data?.task_id || d.task_id, platform: 'kie' };
+}
+
+async function kieGetStatus(taskId) {
+  const r = await fetch(`https://api.kie.ai/api/v1/veo/record-detail?taskId=${taskId}`, {
+    headers: { 'Authorization': `Bearer ${KIE_API_KEY}` }
+  });
+  const d = await r.json();
+  const status = d.data?.status || d.data?.task_status || 'unknown';
+  const isComplete = status === 'completed' || status === 'success' || !!d.data?.video_url;
+  const isFailed = status === 'failed' || status === 'error';
+  return {
+    status: isComplete ? 'completed' : isFailed ? 'failed' : 'processing',
+    videoUrl: d.data?.video_url || d.data?.output?.video_url || null,
+    coverUrl: d.data?.image_url || d.data?.cover_url || null,
+    raw: d.data
+  };
+}
+
+// === fal.ai Video Generation ===
+async function falGenerate(prompt, model, aspectRatio) {
+  const endpoint = model || 'fal-ai/veo3/fast';
+  const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${FAL_API_KEY}` },
+    body: JSON.stringify({
+      prompt,
+      aspect_ratio: aspectRatio || '9:16',
+      duration: '8s',
+      resolution: '720p',
+      generate_audio: true
+    })
+  });
+  if (!r.ok) { const e = await r.text(); throw new Error('fal.ai 提交失败: ' + e); }
+  const d = await r.json();
+  return { taskId: d.request_id, platform: 'fal', endpoint };
+}
+
+async function falGetStatus(taskId, endpoint) {
+  const r = await fetch(`https://queue.fal.run/${endpoint}/requests/${taskId}/status`, {
+    headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+  });
+  const d = await r.json();
+  if (d.status === 'COMPLETED') {
+    // Fetch actual result
+    const rr = await fetch(`https://queue.fal.run/${endpoint}/requests/${taskId}`, {
+      headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+    });
+    const result = await rr.json();
+    return { status: 'completed', videoUrl: result.video?.url || null, coverUrl: null, raw: result };
+  }
+  if (d.status === 'FAILED') return { status: 'failed', videoUrl: null, raw: d };
+  return { status: 'processing', videoUrl: null, raw: d };
+}
+
+// === API: Submit video generation ===
+app.post('/api/videogen/generate', async (req, res) => {
+  try {
+    const { prompt, platform, model, aspectRatio } = req.body;
+    if (!prompt) return res.status(400).json({ error: '缺少 prompt' });
+
+    let result;
+    if (platform === 'fal') {
+      if (!FAL_API_KEY) return res.status(500).json({ error: 'FAL_API_KEY 未配置' });
+      result = await falGenerate(prompt, model, aspectRatio);
+    } else {
+      if (!KIE_API_KEY) return res.status(500).json({ error: 'KIE_API_KEY 未配置' });
+      result = await kieGenerate(prompt, model, aspectRatio);
+    }
+
+    // Store task for polling
+    const taskKey = `${result.platform}_${result.taskId}`;
+    videoTasks.set(taskKey, { ...result, createdAt: Date.now(), prompt });
+
+    // Auto-cleanup after 2 hours
+    setTimeout(() => videoTasks.delete(taskKey), 7200000);
+
+    res.json({ success: true, taskId: result.taskId, platform: result.platform, taskKey });
+  } catch (e) { console.error('视频生成提交失败:', e); res.status(500).json({ error: e.message }); }
+});
+
+// === API: Poll video generation status ===
+app.get('/api/videogen/status/:taskKey', async (req, res) => {
+  try {
+    const { taskKey } = req.params;
+    const task = videoTasks.get(taskKey);
+    if (!task) return res.status(404).json({ error: '任务不存在或已过期' });
+
+    let status;
+    if (task.platform === 'fal') {
+      status = await falGetStatus(task.taskId, task.endpoint);
+    } else {
+      status = await kieGetStatus(task.taskId);
+    }
+
+    res.json({ success: true, ...status, taskKey });
+  } catch (e) { console.error('状态查询失败:', e); res.status(500).json({ error: e.message }); }
+});
+
 // === Health ===
 app.get('/api/health', (req, res) => {
   let ffmpeg = false; try { execSync('ffmpeg -version', { stdio:'pipe', timeout:5000 }); ffmpeg = true; } catch(e) {}
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), services: { gemini: !!GEMINI_API_KEY, openrouter: !!OPENROUTER_API_KEY, feishu: !!(FEISHU_APP_ID&&FEISHU_APP_SECRET), ffmpeg } });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), services: { gemini: !!GEMINI_API_KEY, openrouter: !!OPENROUTER_API_KEY, feishu: !!(FEISHU_APP_ID&&FEISHU_APP_SECRET), ffmpeg, kie: !!KIE_API_KEY, fal: !!FAL_API_KEY } });
 });
 
-app.listen(PORT, () => { console.log(`🚀 http://localhost:${PORT}  Gemini:${GEMINI_API_KEY?'✅':'❌'} OpenRouter:${OPENROUTER_API_KEY?'✅':'❌'} 飞书:${FEISHU_APP_ID?'✅':'❌'}`); });
+app.listen(PORT, () => { console.log(`🚀 http://localhost:${PORT}  Gemini:${GEMINI_API_KEY?'✅':'❌'} OpenRouter:${OPENROUTER_API_KEY?'✅':'❌'} 飞书:${FEISHU_APP_ID?'✅':'❌'} Kie:${KIE_API_KEY?'✅':'❌'} Fal:${FAL_API_KEY?'✅':'❌'}`); });
