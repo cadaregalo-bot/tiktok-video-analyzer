@@ -33,6 +33,71 @@
 .ftip{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(58,176,158,.4);cursor:pointer;z-index:100}.ftip .dot{width:7px;height:7px;background:#fff;border-radius:50%;opacity:.8}.ftip .x{margin-left:6px;opacity:.7;font-size:14px}
 @media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}.feat-grid{grid-template-columns:1fr}.str-layout{grid-template-columns:1fr}.shot-scroll .sc{width:150px}.sc-img{width:150px;height:200px}}
 @media(max-width:600px){.metrics{grid-template-columns:1fr}.hdr{padding:14px 16px}.main{padding:20px 12px 80px}}
+/* === Tab 4: Video Gen === */
+.t4-layout{display:grid;grid-template-columns:1fr 380px;gap:24px}
+.t4-editor{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:24px}
+.t4-sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:80px;align-self:start}
+.t4-title{font-size:17px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.t4-shot{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;position:relative;transition:border-color .2s}
+.t4-shot:hover{border-color:var(--accent)}
+.t4-shot .shot-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.t4-shot .shot-hdr .shot-idx{background:var(--accentBg);color:var(--accent2);padding:2px 10px;border-radius:6px;font-size:12px;font-weight:700}
+.t4-shot .shot-hdr .shot-elem{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.t4-shot .shot-field{margin-bottom:10px}
+.t4-shot .shot-field label{display:block;font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:600;letter-spacing:.5px}
+.t4-shot .shot-field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);resize:vertical;font-family:inherit;line-height:1.6;min-height:40px}
+.t4-shot .shot-field textarea:focus{border-color:var(--accent);outline:none}
+.t4-shot .shot-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);font-family:inherit}
+.t4-shot .shot-field input:focus{border-color:var(--accent);outline:none}
+.t4-shot .shot-actions{display:flex;gap:8px;justify-content:flex-end}
+.t4-shot .btn-sm{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:inherit}
+.t4-shot .btn-sm:hover{border-color:var(--accent);color:var(--text)}
+.t4-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px}
+.t4-panel h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.t4-select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--text);font-family:inherit;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239999aa' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.t4-select:focus{border-color:var(--accent);outline:none}
+.t4-select:disabled{opacity:.4;cursor:not-allowed}
+.t4-opt{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.t4-opt:last-child{border-bottom:none}
+.t4-opt .opt-label{color:var(--text2)}
+.t4-opt .opt-val{color:var(--text);font-weight:600;font-size:12px}
+.t4-radio{display:flex;gap:8px}
+.t4-radio label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text2);cursor:pointer}
+.t4-radio input[type=radio]{accent-color:var(--accent)}
+.t4-check{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer}
+.t4-check input[type=checkbox]{accent-color:var(--accent)}
+.btn-gen{width:100%;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:var(--r);padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-gen:hover{box-shadow:0 6px 24px rgba(124,58,237,.3);transform:translateY(-1px)}
+.btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.gen-progress{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:12px;display:none}
+.gen-progress.on{display:block}
+.gen-progress .gp-bar{height:4px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:10px}
+.gen-progress .gp-bar .gp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:4px;transition:width .5s;width:0%}
+.gen-progress .gp-text{font-size:13px;color:var(--text2);text-align:center}
+.gen-result{margin-top:16px;display:none}
+.gen-result.on{display:block}
+.gen-result video{width:100%;border-radius:var(--r);background:#000}
+.gen-result .gr-actions{display:flex;gap:10px;margin-top:12px;justify-content:center}
+.bgm-list{max-height:240px;overflow-y:auto;padding-right:4px}
+.bgm-list::-webkit-scrollbar{width:4px}
+.bgm-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.bgm-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.bgm-item:hover{border-color:var(--accent)}
+.bgm-item.selected{border-color:var(--accent);background:var(--accentBg)}
+.bgm-item .bgm-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.bgm-item .bgm-mood{font-size:11px;font-weight:600;padding:1px 8px;border-radius:4px;display:inline-block}
+.bgm-item .bgm-desc{font-size:12px;color:var(--text3);margin-top:4px}
+.mood-tight{background:var(--redBg);color:var(--red)}
+.mood-cool{background:var(--purpleBg);color:var(--purple)}
+.mood-chill{background:var(--greenBg);color:var(--green)}
+.mood-trend{background:var(--blueBg);color:var(--blue)}
+.t4-prompt-preview{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-size:12px;color:var(--text2);line-height:1.7;max-height:200px;overflow-y:auto;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;display:none}
+.t4-prompt-preview.on{display:block}
+.t4-no-data{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+.t4-no-data .nd-icon{font-size:48px;margin-bottom:12px;opacity:.4}
+.t4-no-data .nd-text{margin-bottom:8px}
+.t4-no-data .nd-hint{font-size:12px}
+@media(max-width:900px){.t4-layout{grid-template-columns:1fr}.t4-sidebar{position:static}}
 </style>
 </head>
 <body>
@@ -48,10 +113,11 @@
 <div id="page-result">
   <div class="metrics" id="metrics"></div>
   <div class="tip-bar" id="tip-bar"></div>
-  <div class="tabs"><div class="tab active" data-tab="t1" onclick="switchTab('t1',this)">📷 镜头截图</div><div class="tab" data-tab="t2" onclick="switchTab('t2',this)">📋 分镜脚本</div><div class="tab" data-tab="t3" onclick="switchTab('t3',this)">📊 脚本结构分析</div><div class="tab" style="color:var(--text3);cursor:default;opacity:.5">✨ AI 视频生成</div><div class="tab" style="color:var(--text3);cursor:default;opacity:.5">📥 导出报告</div></div>
+  <div class="tabs"><div class="tab active" data-tab="t1" onclick="switchTab('t1',this)">📷 镜头截图</div><div class="tab" data-tab="t2" onclick="switchTab('t2',this)">📋 分镜脚本</div><div class="tab" data-tab="t3" onclick="switchTab('t3',this)">📊 脚本结构分析</div><div class="tab" data-tab="t4" onclick="switchTab('t4',this)">✨ AI 视频生成</div><div class="tab" style="color:var(--text3);cursor:default;opacity:.5">📥 导出报告</div></div>
   <div class="tab-panel active" id="t1"></div>
   <div class="tab-panel" id="t2"></div>
   <div class="tab-panel" id="t3"></div>
+  <div class="tab-panel" id="t4"></div>
   <div class="action-bar">
     <button class="btn-sec" id="btn-feishu" onclick="saveToFeishu()">📝 写入飞书多维表格</button>
     <button class="btn-sec" onclick="resetAll()">🔄 拆解下一条</button>
@@ -96,6 +162,380 @@ function openLB(src){document.getElementById('lb-img').src=src;document.getEleme
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('lb').classList.remove('on')});
 function copyTable(){const t=document.getElementById('sb-table');if(!t)return;const r=document.createRange();r.selectNode(t);window.getSelection().removeAllRanges();window.getSelection().addRange(r);document.execCommand('copy');window.getSelection().removeAllRanges();const b=document.querySelector('.btn-copy');b.textContent='✓ 已复制';setTimeout(()=>b.textContent='📋 复制表格',2000)}
 function resetAll(){curFile=null;analysisData=null;document.getElementById('page-upload').style.display='';document.getElementById('page-result').style.display='none';document.getElementById('btn-reset').style.display='none';document.getElementById('hdr-sub').textContent='AI驱动的视频结构分析';hideErr();hideProg();const uz=document.getElementById('upzone');uz.innerHTML='<span class="fb" onclick="event.stopPropagation();document.getElementById(\'fileIn\').click()">未选择任何文件</span><div class="up-arrow"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7" stroke="var(--text3)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="up-text">拖拽视频到这里，或点击上传</div><div class="up-hint">支持 MP4, MOV, AVI, WebM 格式，最大 200MB</div><input type="file" id="fileIn" accept="video/*" style="display:none">';document.getElementById('fileIn').addEventListener('change',()=>{if(document.getElementById('fileIn').files.length){curFile=document.getElementById('fileIn').files[0];showSel()}})}
+
+// ============== Tab 4: AI 视频生成 ==============
+let t4RewriteData = null;
+let t4Platforms = null;
+let t4BgmData = null;
+let t4GenTaskKey = null;
+let t4PollTimer = null;
+
+function renderTab4() {
+  const panel = document.getElementById('t4');
+  // Check if we have rewrite data from Tab 3
+  const rw = getRewriteData();
+  if (!rw || !rw.rewritten_structure || rw.rewritten_structure.length === 0) {
+    panel.innerHTML = '<div class="t4-no-data"><div class="nd-icon">✨</div><div class="nd-text">请先在「脚本结构分析」Tab 完成跨品类改编</div><div class="nd-hint">改编完成后回到此页，即可编辑脚本并生成视频</div></div>';
+    return;
+  }
+  t4RewriteData = JSON.parse(JSON.stringify(rw)); // deep clone for editing
+
+  let shotsHtml = t4RewriteData.rewritten_structure.map((item, i) => {
+    const cls = elemCls(item.element);
+    return `<div class="t4-shot" id="t4-shot-${i}">
+      <div class="shot-hdr">
+        <span class="shot-idx">#${i + 1}</span>
+        <span class="shot-elem bg-${cls}">${esc(item.element)}</span>
+        <span style="font-size:11px;color:var(--text3)">${esc(item.shot_type || '')}</span>
+      </div>
+      <div class="shot-field">
+        <label>🎬 画面描述 (EN)</label>
+        <textarea rows="2" data-idx="${i}" data-field="scene_description_en" onchange="t4UpdateShot(this)">${esc(item.scene_description_en || '')}</textarea>
+      </div>
+      <div class="shot-field">
+        <label>🎤 口播文案 (EN)</label>
+        <textarea rows="2" data-idx="${i}" data-field="voiceover_en" onchange="t4UpdateShot(this)">${esc(item.voiceover_en || '')}</textarea>
+      </div>
+      <div class="shot-field">
+        <label>📝 字幕文字</label>
+        <input type="text" data-idx="${i}" data-field="text_overlay" onchange="t4UpdateShot(this)" value="${esc(item.text_overlay || '')}">
+      </div>
+      <div class="shot-field">
+        <label>📸 拍摄建议</label>
+        <textarea rows="1" data-idx="${i}" data-field="shooting_notes" onchange="t4UpdateShot(this)">${esc(item.shooting_notes || '')}</textarea>
+      </div>
+      <div class="shot-actions">
+        <button class="btn-sm" onclick="t4RemoveShot(${i})">删除</button>
+        ${i > 0 ? '<button class="btn-sm" onclick="t4MoveShot(' + i + ',-1)">↑</button>' : ''}
+        ${i < t4RewriteData.rewritten_structure.length - 1 ? '<button class="btn-sm" onclick="t4MoveShot(' + i + ',1)">↓</button>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Hook + CTA section
+  let extraHtml = '';
+  if (t4RewriteData.hook_suggestion) {
+    extraHtml += `<div class="t4-shot" style="border-color:var(--blue)">
+      <div class="shot-hdr"><span class="shot-elem bg-blue">Hook</span></div>
+      <div class="shot-field"><label>开头钩子</label>
+      <textarea rows="2" id="t4-hook" onchange="t4RewriteData.hook_suggestion=this.value">${esc(t4RewriteData.hook_suggestion)}</textarea></div>
+    </div>`;
+  }
+  if (t4RewriteData.cta_suggestion) {
+    extraHtml += `<div class="t4-shot" style="border-color:var(--red)">
+      <div class="shot-hdr"><span class="shot-elem bg-red">CTA</span></div>
+      <div class="shot-field"><label>结尾促单</label>
+      <textarea rows="2" id="t4-cta" onchange="t4RewriteData.cta_suggestion=this.value">${esc(t4RewriteData.cta_suggestion)}</textarea></div>
+    </div>`;
+  }
+
+  panel.innerHTML = `<div class="t4-layout">
+    <div class="t4-editor">
+      <div class="t4-title">✏️ 仿写脚本编辑器 <span style="font-size:12px;color:var(--text3);font-weight:400">基于拆解改编 · 每个镜头可编辑</span></div>
+      ${extraHtml}
+      <div id="t4-shots">${shotsHtml}</div>
+      <button class="btn-sm" style="margin-top:12px;padding:8px 16px" onclick="t4AddShot()">+ 添加镜头</button>
+      <div style="margin-top:16px">
+        <button class="btn-sm" style="padding:8px 16px" onclick="t4TogglePrompt()">👁 预览生成 Prompt</button>
+        <div class="t4-prompt-preview" id="t4-prompt-preview"></div>
+      </div>
+    </div>
+    <div class="t4-sidebar">
+      <div class="t4-panel">
+        <h3>🎬 视频生成设置</h3>
+        <div class="t4-opt"><span class="opt-label">生成平台</span></div>
+        <select class="t4-select" id="t4-platform" onchange="t4PlatformChange()">
+          <option value="">加载中...</option>
+        </select>
+        <div class="t4-opt" style="margin-top:12px"><span class="opt-label">模型选择</span></div>
+        <select class="t4-select" id="t4-model">
+          <option value="">先选平台</option>
+        </select>
+        <div class="t4-opt" style="margin-top:12px"><span class="opt-label">画面比例</span></div>
+        <div class="t4-radio" id="t4-aspect">
+          <label><input type="radio" name="t4ar" value="9:16" checked> 9:16 竖屏</label>
+          <label><input type="radio" name="t4ar" value="16:9"> 16:9 横屏</label>
+          <label><input type="radio" name="t4ar" value="1:1"> 1:1</label>
+        </div>
+        <div class="t4-opt" style="margin-top:12px"><span class="opt-label">选项</span></div>
+        <label class="t4-check"><input type="checkbox" id="t4-bilingual"> 中英双语字幕</label>
+        <label class="t4-check" style="margin-top:6px"><input type="checkbox" id="t4-subtitle" checked> 添加字幕提示</label>
+        <button class="btn-gen" id="btn-gen" onclick="t4Generate()" style="margin-top:16px" disabled>⚡ 生成视频</button>
+        <div class="gen-progress" id="gen-progress">
+          <div class="gp-bar"><div class="gp-fill" id="gp-fill"></div></div>
+          <div class="gp-text" id="gp-text">准备中...</div>
+        </div>
+        <div class="gen-result" id="gen-result">
+          <video id="gen-video" controls></video>
+          <div class="gr-actions">
+            <a id="gen-download" class="btn-sm" style="padding:8px 16px;text-decoration:none" download>⬇ 下载视频</a>
+            <button class="btn-sm" style="padding:8px 16px" onclick="t4Generate()">🔄 重新生成</button>
+          </div>
+        </div>
+      </div>
+      <div class="t4-panel">
+        <h3>🎵 BGM 推荐</h3>
+        <div class="bgm-list" id="t4-bgm-list">
+          <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px"><div class="spin" style="margin:0 auto 8px"></div>加载 BGM 库...</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Load platforms and BGM
+  t4LoadPlatforms();
+  t4LoadBgm();
+}
+
+function getRewriteData() {
+  // Try to find rewrite data from the rw-result container
+  const re = document.getElementById('rw-result');
+  if (!re) return null;
+  // Check if renderRewrite stored it
+  if (window._lastRewrite) return window._lastRewrite;
+  return null;
+}
+
+// Patch renderRewrite to store data for Tab 4
+const _origRenderRewrite = renderRewrite;
+renderRewrite = function(rw) {
+  window._lastRewrite = rw;
+  _origRenderRewrite(rw);
+};
+
+function t4UpdateShot(el) {
+  const idx = parseInt(el.dataset.idx);
+  const field = el.dataset.field;
+  if (t4RewriteData && t4RewriteData.rewritten_structure[idx]) {
+    t4RewriteData.rewritten_structure[idx][field] = el.value;
+  }
+}
+
+function t4RemoveShot(idx) {
+  if (!t4RewriteData) return;
+  t4RewriteData.rewritten_structure.splice(idx, 1);
+  renderTab4();
+}
+
+function t4MoveShot(idx, dir) {
+  if (!t4RewriteData) return;
+  const arr = t4RewriteData.rewritten_structure;
+  const ni = idx + dir;
+  if (ni < 0 || ni >= arr.length) return;
+  [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+  window._lastRewrite = t4RewriteData;
+  renderTab4();
+}
+
+function t4AddShot() {
+  if (!t4RewriteData) return;
+  t4RewriteData.rewritten_structure.push({
+    element: '药', shot_type: '产品展示',
+    scene_description_en: '', voiceover_en: '',
+    scene_description_cn: '', voiceover_cn: '',
+    text_overlay: '', shooting_notes: ''
+  });
+  window._lastRewrite = t4RewriteData;
+  renderTab4();
+}
+
+function t4TogglePrompt() {
+  const el = document.getElementById('t4-prompt-preview');
+  if (el.classList.contains('on')) { el.classList.remove('on'); return; }
+  el.textContent = t4BuildPrompt();
+  el.classList.add('on');
+}
+
+function t4BuildPrompt() {
+  if (!t4RewriteData) return '';
+  const shots = t4RewriteData.rewritten_structure || [];
+  const bilingual = document.getElementById('t4-bilingual')?.checked;
+  const subtitle = document.getElementById('t4-subtitle')?.checked;
+  let prompt = 'Create a TikTok-style short product video with the following shot sequence:\n\n';
+  if (t4RewriteData.hook_suggestion) {
+    prompt += `[HOOK - Opening 3 seconds]: ${t4RewriteData.hook_suggestion}\n\n`;
+  }
+  shots.forEach((s, i) => {
+    prompt += `[Shot ${i + 1} - ${s.element || 'Scene'}]: `;
+    prompt += (s.scene_description_en || s.voiceover_en || '');
+    if (s.shooting_notes) prompt += ` (Camera: ${s.shooting_notes})`;
+    if (subtitle && s.text_overlay) prompt += ` Text overlay: "${s.text_overlay}"`;
+    if (bilingual && s.voiceover_cn) prompt += ` [Chinese subtitle: ${s.voiceover_cn}]`;
+    prompt += '\n\n';
+  });
+  if (t4RewriteData.cta_suggestion) {
+    prompt += `[CTA - Closing]: ${t4RewriteData.cta_suggestion}\n`;
+  }
+  prompt += '\nStyle: Vertical 9:16 TikTok format. Fast-paced editing. Bright, engaging visuals. Product-focused e-commerce style.';
+  return prompt;
+}
+
+async function t4LoadPlatforms() {
+  try {
+    const r = await fetch('/api/videogen/platforms');
+    const d = await r.json();
+    t4Platforms = d.platforms;
+    const sel = document.getElementById('t4-platform');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— 选择生成平台 —</option>' +
+      d.platforms.map(p => `<option value="${p.id}" ${!p.available ? 'disabled' : ''}>${p.name}${!p.available ? ' (未配置 API Key)' : ''}</option>`).join('');
+    // Auto-select first available
+    const first = d.platforms.find(p => p.available);
+    if (first) { sel.value = first.id; t4PlatformChange(); }
+  } catch (e) { console.error('平台加载失败:', e); }
+}
+
+function t4PlatformChange() {
+  const pid = document.getElementById('t4-platform')?.value;
+  const msel = document.getElementById('t4-model');
+  const btn = document.getElementById('btn-gen');
+  if (!pid || !t4Platforms) { msel.innerHTML = '<option value="">先选平台</option>'; btn.disabled = true; return; }
+  const p = t4Platforms.find(x => x.id === pid);
+  if (!p || !p.available) { msel.innerHTML = '<option value="">平台不可用</option>'; btn.disabled = true; return; }
+  msel.innerHTML = p.models.map(m => `<option value="${m.id}">${m.name} — ${m.price} · ${m.speed}</option>`).join('');
+  btn.disabled = false;
+}
+
+async function t4LoadBgm() {
+  try {
+    const r = await fetch('/api/feishu/bgm');
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    t4BgmData = d.bgm;
+    const list = document.getElementById('t4-bgm-list');
+    if (!list) return;
+    if (d.bgm.length === 0) { list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">BGM 库暂无数据</div>'; return; }
+    list.innerHTML = d.bgm.map((b, i) => {
+      const moodCls = (b.mood || '').includes('紧张') ? 'mood-tight' : (b.mood || '').includes('爽') ? 'mood-cool' : (b.mood || '').includes('治愈') || (b.mood || '').includes('轻松') ? 'mood-chill' : 'mood-trend';
+      return `<div class="bgm-item" onclick="t4SelectBgm(this,${i})">
+        <div class="bgm-name">${esc(b.name)}</div>
+        <span class="bgm-mood ${moodCls}">${esc(b.mood)}</span>
+        ${b.description ? '<div class="bgm-desc">' + esc(b.description) + '</div>' : ''}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('BGM加载失败:', e);
+    const list = document.getElementById('t4-bgm-list');
+    if (list) list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">BGM 加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+function t4SelectBgm(el, idx) {
+  document.querySelectorAll('.bgm-item').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function t4Generate() {
+  const btn = document.getElementById('btn-gen');
+  const prog = document.getElementById('gen-progress');
+  const result = document.getElementById('gen-result');
+  const fill = document.getElementById('gp-fill');
+  const text = document.getElementById('gp-text');
+  const platform = document.getElementById('t4-platform')?.value;
+  const model = document.getElementById('t4-model')?.value;
+  const ar = document.querySelector('input[name="t4ar"]:checked')?.value || '9:16';
+
+  if (!platform || !model) return alert('请选择生成平台和模型');
+  if (!t4RewriteData) return alert('请先完成脚本编辑');
+
+  const prompt = t4BuildPrompt();
+  if (!prompt.trim()) return alert('脚本内容为空');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ 提交中…';
+  prog.classList.add('on');
+  result.classList.remove('on');
+  fill.style.width = '5%';
+  text.textContent = '正在提交生成任务…';
+
+  try {
+    const r = await fetch('/api/videogen/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, platform, model, aspectRatio: ar })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || '提交失败');
+
+    t4GenTaskKey = d.taskKey;
+    fill.style.width = '15%';
+    text.textContent = '任务已提交，等待生成中… (通常需要1-3分钟)';
+    btn.textContent = '⏳ 生成中…';
+
+    // Start polling
+    t4StartPolling();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '⚡ 生成视频';
+    prog.classList.remove('on');
+    alert('生成失败: ' + e.message);
+  }
+}
+
+function t4StartPolling() {
+  if (t4PollTimer) clearInterval(t4PollTimer);
+  let attempts = 0;
+  const maxAttempts = 120; // 10 minutes max (5s intervals)
+  const fill = document.getElementById('gp-fill');
+  const text = document.getElementById('gp-text');
+
+  t4PollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(t4PollTimer);
+      t4PollTimer = null;
+      text.textContent = '⏰ 生成超时，请稍后刷新查看';
+      document.getElementById('btn-gen').disabled = false;
+      document.getElementById('btn-gen').textContent = '⚡ 重新生成';
+      return;
+    }
+
+    // Update progress bar (simulate)
+    const pct = Math.min(15 + (attempts / maxAttempts) * 80, 95);
+    fill.style.width = pct + '%';
+    const elapsed = attempts * 5;
+    text.textContent = `生成中… 已等待 ${elapsed}s`;
+
+    try {
+      const r = await fetch(`/api/videogen/status/${t4GenTaskKey}`);
+      const d = await r.json();
+
+      if (d.status === 'completed' && d.videoUrl) {
+        clearInterval(t4PollTimer);
+        t4PollTimer = null;
+        fill.style.width = '100%';
+        text.textContent = '✅ 生成完成！';
+        document.getElementById('btn-gen').disabled = false;
+        document.getElementById('btn-gen').textContent = '⚡ 重新生成';
+
+        // Show result
+        const video = document.getElementById('gen-video');
+        video.src = d.videoUrl;
+        document.getElementById('gen-download').href = d.videoUrl;
+        document.getElementById('gen-result').classList.add('on');
+
+        setTimeout(() => { document.getElementById('gen-progress').classList.remove('on'); }, 2000);
+      } else if (d.status === 'failed') {
+        clearInterval(t4PollTimer);
+        t4PollTimer = null;
+        fill.style.width = '0%';
+        text.textContent = '❌ 生成失败，请重试';
+        document.getElementById('btn-gen').disabled = false;
+        document.getElementById('btn-gen').textContent = '⚡ 重新生成';
+      }
+    } catch (e) {
+      // Network error, keep polling
+      console.error('轮询失败:', e);
+    }
+  }, 5000);
+}
+
+// Hook into tab switching to render Tab 4 lazily
+const _origSwitchTab = switchTab;
+switchTab = function(id, el) {
+  _origSwitchTab(id, el);
+  if (id === 't4') renderTab4();
+};
 </script>
 </body>
 </html>
