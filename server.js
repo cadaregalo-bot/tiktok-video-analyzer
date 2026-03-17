@@ -13,8 +13,9 @@ const PORT = process.env.PORT || 3000;
 // ============ 配置 ============
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
+const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
 
-// 飞书多维表格配置（Phase 2 入库用）
 const FEISHU_CONFIG = {
   app_token: 'T7g4b0M4waf9OwsMc3pcJoqfnma',
   tables: {
@@ -31,7 +32,7 @@ const FEISHU_CONFIG = {
   }
 };
 
-// Multer 配置
+// Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
@@ -43,14 +44,12 @@ const storage = multer.diskStorage({
     cb(null, `${uuidv4()}${ext}`);
   }
 });
-
 const upload = multer({
   storage,
   limits: { fileSize: 200 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.mp4', '.mov', '.avi', '.webm'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedTypes.includes(ext)) cb(null, true);
+    const allowed = ['.mp4', '.mov', '.avi', '.webm'];
+    if (allowed.includes(path.extname(file.originalname).toLowerCase())) cb(null, true);
     else cb(new Error('不支持的文件格式'));
   }
 });
@@ -61,15 +60,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/frames', express.static(path.join(__dirname, 'frames')));
 
-// Gemini AI
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // ============ 工具函数 ============
-
 function getMimeType(filename) {
   const ext = path.extname(filename).toLowerCase();
-  const types = { '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo', '.webm': 'video/webm' };
-  return types[ext] || 'video/mp4';
+  return { '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo', '.webm': 'video/webm' }[ext] || 'video/mp4';
 }
 
 function getVideoDuration(videoPath) {
@@ -89,9 +85,7 @@ function extractFrames(videoPath, videoId, timePoints) {
     const outputPath = path.join(framesDir, filename);
     try {
       execSync(`ffmpeg -y -ss ${t} -i "${videoPath}" -frames:v 1 -q:v 2 "${outputPath}"`, { timeout: 15000, stdio: 'pipe' });
-      if (fs.existsSync(outputPath)) {
-        frames.push({ index: i + 1, time: t, filename, url: `/frames/${videoId}/${filename}` });
-      }
+      if (fs.existsSync(outputPath)) frames.push({ index: i + 1, time: t, filename, url: `/frames/${videoId}/${filename}` });
     } catch (e) { console.warn(`截帧失败 t=${t}s`); }
   }
   return frames;
@@ -106,12 +100,85 @@ function extractShotFrames(videoPath, videoId, shots) {
   return extractFrames(videoPath, videoId, timePoints);
 }
 
-// ============ API: 分析视频 ============
+// ============ 飞书 API 工具 ============
 
+// 获取 tenant_access_token
+let feishuTokenCache = { token: null, expires: 0 };
+
+async function getFeishuToken() {
+  if (feishuTokenCache.token && Date.now() < feishuTokenCache.expires) {
+    return feishuTokenCache.token;
+  }
+  const resp = await fetch('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ app_id: FEISHU_APP_ID, app_secret: FEISHU_APP_SECRET })
+  });
+  const data = await resp.json();
+  if (data.code !== 0) throw new Error('飞书认证失败: ' + (data.msg || JSON.stringify(data)));
+  feishuTokenCache = {
+    token: data.tenant_access_token,
+    expires: Date.now() + (data.expire - 300) * 1000 // 提前5分钟过期
+  };
+  return feishuTokenCache.token;
+}
+
+// 写入飞书多维表格记录
+async function feishuCreateRecord(tableId, fields) {
+  const token = await getFeishuToken();
+  const resp = await fetch(`https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableId}/records`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ fields })
+  });
+  const data = await resp.json();
+  if (data.code !== 0) {
+    console.error('飞书写入失败:', JSON.stringify(data));
+    throw new Error('飞书写入失败: ' + (data.msg || `code=${data.code}`));
+  }
+  return data.data?.record;
+}
+
+// 匹配视频结构到飞书单选选项
+function matchVideoStructure(framework) {
+  const f = (framework || '').toLowerCase();
+  if (f.includes('痛点') && f.includes('解决')) return '痛点揭露+解决方案';
+  if (f.includes('对比')) return '对比测试';
+  if (f.includes('开箱')) return '开箱展示';
+  if (f.includes('教程') || f.includes('科普')) return '教程类';
+  if (f.includes('真实') || f.includes('体验') || f.includes('vlog')) return '日常vlog';
+  if (f.includes('证明') || f.includes('UGC')) return 'UGC买家秀';
+  return '痛点揭露+解决方案'; // 默认
+}
+
+// 匹配CTA行动类型到飞书单选选项
+function matchActionType(actionType) {
+  const map = {
+    '痛点共鸣': '痛点共鸣', '提问触发': '提问触发', '结果前置': '结果前置',
+    '反常识': '反常识', '数字可信': '数字可信', '场景代入': '场景代入',
+    '稀缺促单': '稀缺促单', '损失厌恶': '损失厌恶', '直接指令': '直接指令',
+    '权益利诱': '权益利诱', '产品演示': '产品演示', '对比引导': '对比引导',
+    '用户证言': '用户证言', '社交证明': '社交证明', '对比锚定': '对比锚定'
+  };
+  return map[actionType] || '痛点共鸣';
+}
+
+// 匹配CTA视频阶段
+function matchVideoStage(type) {
+  if (!type) return '开头（前3秒钩子）';
+  if (type.includes('开头')) return '开头（前3秒钩子）';
+  if (type.includes('中间')) return '中间（卖点引导）';
+  if (type.includes('结尾')) return '结尾（促单转化）';
+  return '开头（前3秒钩子）';
+}
+
+// ============ API: 分析视频 ============
 app.post('/api/analyze', upload.single('video'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: '请上传视频文件' });
-
     const videoPath = req.file.path;
     const videoId = path.basename(videoPath, path.extname(videoPath));
 
@@ -121,7 +188,6 @@ app.post('/api/analyze', upload.single('video'), async (req, res) => {
     send(1, '📁 视频上传成功');
     send(2, '🎬 ffmpeg 正在截取关键帧...');
 
-    // Gemini 分析
     send(3, '🔍 Gemini AI 正在分析视频结构...');
     const videoBuffer = fs.readFileSync(videoPath);
     const videoBase64 = videoBuffer.toString('base64');
@@ -197,7 +263,6 @@ app.post('/api/analyze', upload.single('video'), async (req, res) => {
       analysisResult = { raw_response: responseText, parse_error: true };
     }
 
-    // 精准截帧
     send(5, '📸 根据镜头时间点截帧...');
     if (analysisResult.shots && analysisResult.shots.length > 0) {
       const shotFrames = extractShotFrames(videoPath, videoId, analysisResult.shots);
@@ -218,7 +283,6 @@ app.post('/api/analyze', upload.single('video'), async (req, res) => {
 });
 
 // ============ API: 跨品类改写 ============
-
 app.post('/api/rewrite', async (req, res) => {
   try {
     const { analysis, newCategory, productName, coreSellingPoints } = req.body;
@@ -294,23 +358,143 @@ ${shots.map(s => `#${s.shot_number} [${s.shot_type}] ${s.time_start}s-${s.time_e
   }
 });
 
-// ============ API: 飞书入库（Phase 2） ============
-
+// ============ API: 飞书入库 ============
 app.post('/api/save-to-feishu', async (req, res) => {
-  res.json({ success: false, message: '飞书入库功能开发中（Phase 2）', config: FEISHU_CONFIG });
+  try {
+    if (!FEISHU_APP_ID || !FEISHU_APP_SECRET) {
+      return res.status(500).json({ error: '飞书 APP_ID 或 APP_SECRET 未配置' });
+    }
+
+    const { analysis, videoCode, videoUrl, filename } = req.body;
+    if (!analysis) return res.status(400).json({ error: '缺少分析数据' });
+
+    const a = analysis;
+    const ov = a.video_overview || {};
+    const ss = a.script_structure || {};
+    const em = a.extracted_materials || {};
+    const results = { saved: [], errors: [] };
+
+    // 1. 写入竞品爆款拆解库（主记录）
+    try {
+      const hookTexts = (em.hook_scripts || []).map(h => h.text).join('\n');
+      const reusable = typeof a.reusable_points === 'string' ? a.reusable_points : JSON.stringify(a.reusable_points || '');
+      const bgmDesc = em.bgm ? `${em.bgm.mood || ''} - ${em.bgm.description || ''}` : '';
+
+      const mainRecord = await feishuCreateRecord(FEISHU_CONFIG.tables.competitor, {
+        '视频标题/描述': filename || '未命名视频',
+        '视频编码': videoCode || '',
+        '钩子话术': hookTexts,
+        '视频结构': matchVideoStructure(ss.framework),
+        '使用BGM': bgmDesc,
+        '可复用点': reusable,
+        '拆解状态': '已拆解',
+        '拆解时间': Date.now(),
+        ...(videoUrl ? { '视频文件地址': { link: videoUrl, text: videoUrl } } : {})
+      });
+      results.saved.push({ table: '竞品爆款拆解库', recordId: mainRecord?.record_id });
+    } catch (e) {
+      console.error('写入竞品拆解库失败:', e.message);
+      results.errors.push({ table: '竞品爆款拆解库', error: e.message });
+    }
+
+    // 2. 写入号召行动库 CTA
+    const allCTA = [
+      ...(em.hook_scripts || []),
+      ...(em.cta_scripts || []).map(c => ({ text: c.text, type: '结尾', action_type: '稀缺促单' }))
+    ];
+    for (const cta of allCTA) {
+      try {
+        await feishuCreateRecord(FEISHU_CONFIG.tables.cta, {
+          'CTA话术（英文）': cta.text || '',
+          '中文翻译': cta.text || '',
+          '视频阶段': matchVideoStage(cta.type),
+          '行动类型': matchActionType(cta.action_type),
+          '话术逻辑': `从视频拆解提取 - ${filename || ''}`,
+          ...(videoUrl ? { '参考视频链接': { link: videoUrl, text: videoUrl } } : {})
+        });
+        results.saved.push({ table: '号召行动库 CTA', text: (cta.text || '').substring(0, 30) });
+      } catch (e) {
+        results.errors.push({ table: '号召行动库 CTA', error: e.message });
+      }
+    }
+
+    // 3. 写入痛点需求场景库
+    for (const pp of (em.pain_points || [])) {
+      try {
+        await feishuCreateRecord(FEISHU_CONFIG.tables.painpoint, {
+          '场景名称': pp.scene || pp.user_pain || '未命名场景',
+          '用户痛点': pp.user_pain || '',
+          '产品切入点': pp.product_solution || '',
+          '内容角度建议': `从视频拆解提取`,
+          '来源': 'TikTok爆款'
+        });
+        results.saved.push({ table: '痛点需求场景库', scene: (pp.scene || '').substring(0, 30) });
+      } catch (e) {
+        results.errors.push({ table: '痛点需求场景库', error: e.message });
+      }
+    }
+
+    // 4. 写入卖点画面库
+    for (const sp of (em.selling_points || [])) {
+      try {
+        await feishuCreateRecord(FEISHU_CONFIG.tables.sellingpt, {
+          '拍摄说明': sp.shooting_notes || sp.description || '',
+          '画面类型': sp.visual_type || '',
+          '作用': sp.description || ''
+        });
+        results.saved.push({ table: '卖点画面库', desc: (sp.description || '').substring(0, 30) });
+      } catch (e) {
+        results.errors.push({ table: '卖点画面库', error: e.message });
+      }
+    }
+
+    // 5. 写入社会证明库
+    for (const sp of (em.social_proof || [])) {
+      try {
+        await feishuCreateRecord(FEISHU_CONFIG.tables.socialproof, {
+          '证明类型': sp.type || '',
+          '素材名称': sp.content || '',
+          '使用建议': `从视频拆解提取 - ${filename || ''}`
+        });
+        results.saved.push({ table: '社会证明库', type: sp.type });
+      } catch (e) {
+        results.errors.push({ table: '社会证明库', error: e.message });
+      }
+    }
+
+    const totalSaved = results.saved.length;
+    const totalErrors = results.errors.length;
+
+    res.json({
+      success: totalErrors === 0,
+      message: `写入完成：${totalSaved} 条成功${totalErrors > 0 ? `，${totalErrors} 条失败` : ''}`,
+      results
+    });
+
+  } catch (error) {
+    console.error('飞书入库失败:', error);
+    res.status(500).json({ error: '飞书入库失败: ' + error.message });
+  }
 });
 
 // ============ 健康检查 ============
-
 app.get('/api/health', (req, res) => {
   let ffmpegOk = false;
   try { execSync('ffmpeg -version', { stdio: 'pipe', timeout: 5000 }); ffmpegOk = true; } catch (e) {}
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), services: { gemini: !!GEMINI_API_KEY, openrouter: !!OPENROUTER_API_KEY, ffmpeg: ffmpegOk } });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    services: {
+      gemini: !!GEMINI_API_KEY,
+      openrouter: !!OPENROUTER_API_KEY,
+      feishu: !!(FEISHU_APP_ID && FEISHU_APP_SECRET),
+      ffmpeg: ffmpegOk
+    }
+  });
 });
 
 // ============ 启动 ============
-
 app.listen(PORT, () => {
   console.log(`🚀 爆款短视频拆解工具: http://localhost:${PORT}`);
-  console.log(`   Gemini: ${GEMINI_API_KEY ? '✅' : '❌'}  OpenRouter: ${OPENROUTER_API_KEY ? '✅' : '❌'}`);
+  console.log(`   Gemini: ${GEMINI_API_KEY ? '✅' : '❌'}  OpenRouter: ${OPENROUTER_API_KEY ? '✅' : '❌'}  飞书: ${FEISHU_APP_ID ? '✅' : '❌'}`);
 });
